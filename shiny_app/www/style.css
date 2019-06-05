@@ -1,0 +1,13 @@
+.btn-file, .btn-default:hover, .btn-default:active, .btn-default:active:hover {
+    background-color:#367fa9;
+    border-color: #367fa9;
+    color:white;
+}
+
+.progress-bar {
+    background-color: #367fa9;
+}
+
+input.form-control[readonly='readonly'] {
+  display: none;
+}
