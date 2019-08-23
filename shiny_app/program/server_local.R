@@ -111,10 +111,13 @@ filtered_data <- reactive({
                 # filter expression and detection data
                 seurat_object <- result$seurat
                 if (!is.null(filtered_rowids)) {
-                    seurat_object@assays$RNA@data <- seurat_object@assays$RNA@data[, filtered_rowids]
-                    seurat_object@active.ident    <- droplevels(seurat_object@active.ident[filtered_rowids])
-                    result$expression <- future({avg.ex.scale(seurat_object) %>% as.data.frame()}, stdout = FALSE)
-                    result$detection  <- future({local_AverageDetectionRate(seurat_object) %>% as.data.frame()}, stdout = FALSE)
+                    assay_use     <- seurat_object@active.assay
+                    
+                    seurat_object@assays[[assay_use]]@data <- seurat_object@assays[[assay_use]]@data[, filtered_rowids]
+                    seurat_object@active.ident              <- droplevels(seurat_object@active.ident[filtered_rowids])
+                    result$expression                       <- future({avg.ex.scale(seurat_object) %>% as.data.frame()}, stdout = FALSE)
+                    result$detection                        <- future({local_AverageDetectionRate(seurat_object) %>% as.data.frame()}, stdout = FALSE)
+                    
                     #cleanup
                     rm(seurat_object)
                 } else {
