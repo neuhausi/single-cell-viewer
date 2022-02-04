@@ -350,11 +350,11 @@ get_differential_scatter_plot <- function(dataobj, cluster, plottitle, selectedI
                                     }; }
                                 },
                               'select': function(o, e, t) {
-                                    if (typeof o === 'boolean' && o === false) {
-                                        Shiny.onInputChange('", selectedInputID, "', null);
-                                    } else {
-                                        Shiny.onInputChange('", selectedInputID, "', t.selectDataPointObject.y.vars);
-                                    };
+                                    if (CanvasXpress.selector.selections > 0) {
+                                       Shiny.onInputChange('", selectedInputID, "', Object.keys(CanvasXpress.selector.vars));
+                                   } else {
+                                       Shiny.onInputChange('", selectedInputID, "', null);
+                                   };
                                 }
                             }"))
 
