@@ -1,5 +1,5 @@
 # -------------------------------------------------
-# --              FRAMEWORK server.R             --
+# --               FRAMEWORK ui.R                --
 # -------------------------------------------------
 # NOTEs:                                         --
 # Program code goes in "program" directory files --
@@ -18,5 +18,5 @@ source(paste("program", "ui_body.R", sep = .Platform$file.sep),
 
 
 dashboardPage(periscope:::fw_create_header(),
-              periscope:::fw_create_sidebar(),
+              periscope:::fw_create_sidebar(resetbutton = FALSE),
               periscope:::fw_create_body())

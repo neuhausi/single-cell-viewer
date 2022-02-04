@@ -14,8 +14,7 @@
 # ----------------------------------------
 
 # -- IMPORTS --
-
-
+library(shinyFeedback)
 
 # ----------------------------------------
 # --      BODY ELEMENT CREATION         --
@@ -23,60 +22,47 @@
 
 # -- Create Elements
 
-# Add css class to radiobuttons div to position them on same row as the text & handle behaviour related to the file upload.
-application_js <- '$(document).on("shiny:connected", function(e) {
-                    var elements = document.getElementsByClassName("shiny-options-group");
-                    for (var i = 0; i < elements.length; i++)
-                    {
-                        elements[i].classList.add("radio-inline");
-                    }
-                   });
-                   $(document).on("change", "#fileInputDialog", function(e) {
-                        Shiny.onInputChange("fileChosen", this.files[0].size);
-                   });
-                   $(document).on("focusout", "#loading_modal", function(e) {
-                        Shiny.onInputChange("fileModalClosed", Math.random());
-                   });
-                   Shiny.addCustomMessageHandler("openTitleInfoBox",
-                        function(message) {
-                           $("#titleinfobox_trigger").trigger("click");
+# Add css class to radiobuttons div to position them on same row as the text.
+radiobuttons_js <- '$(document).on("shiny:connected", function(e) {
+                        var elements = document.getElementsByClassName("shiny-options-group");
+                        for (var i = 0; i < elements.length; i++)
+                        {
+                            elements[i].classList.add("radio-inline");
                         }
-                    );'
+                    });'
 
 loading_modal <- bsModal("loading_modal",
-                           title   = "Single Cell Viewer Loading...",
-                           trigger = NULL,
-                           size    = "small",
-                           tags$head(tags$style("#loading_modal .modal-title {color:#3380A9; font-weight:bold;}"),
-                                     tags$style("#loading_modal .modal-footer {display:none;}")),
-                           h4(align = 'center', 'The file you have selected is larger than 10 MB. It is now being uploaded and will load momentarily.'),
-                           br(),
-                           p(align = 'center', em('Click anywhere outside this dialog to continue')))
-
-file_error_modal <- bsModal("file_error_modal",
-                            title   = "Single Cell Viewer File Upload Error",
-                            trigger = NULL,
-                            size    = "large",
-                            tags$head(tags$style("#file_error_modal .modal-title {color:#3380A9; font-weight:bold; text-align:center;}"),
-                                      tags$style("#file_error_modal .modal-footer {display:none;}"),
-                                      tags$style("#missing_list {width:60%; margin-left:25%}"),
-                                      tags$style("#missing_list li {text-align:left;}")),
-                            h4(align = 'center', htmlOutput("loading_error_message")),
-                            br(),
-                            p(align = 'center', em('Click anywhere outside this dialog to continue')))
-
-create_bs_button <- function(id, label, width = "100%", disabled = FALSE) {
-    bsButton(inputId  = id,
-             label    = label,
-             type     = "primary",
-             value    = FALSE,
-             style    = "primary",
-             size     = "default",
-             width    = width,
-             icon     = icon("arrow-right"),
-             block    = FALSE,
-             disabled = disabled)
-}
+                         title = "Single Cell Viewer Loading...",
+                         trigger = NULL,
+                         size = "small",
+                         tags$head(tags$script("$(document).ready(function(){$('#loading_modal').modal();});"),
+                                   tags$style("#loading_modal .modal-title {color:#3380A9; font-weight:bold;}"),
+                                   tags$style("#loading_modal .modal-footer {display:none;}")),
+                         h4(align = 'center', 'The requested data is being downloaded and will load momentarily'),
+                         br(),
+                         p(align = 'center', em('Click anywhere outside this dialog to continue')))
+dac_modal <- bsModal("dac_modal",
+                     title = "Differential Analysis Calculation",
+                     trigger = NULL,
+                     size = "small",
+                     tags$head(tags$style("#dac_modal .modal-title {color:#3380A9; font-weight:bold;}"),
+                               tags$style("#dac_modal .modal-footer {display:none;}")),
+                     uiOutput("dacText"),
+                     br(),
+                     tags$div(actionButton("cancel", "Cancel"),
+                              actionButton("proceed", "Proceed", style = "float:right")),
+                     br())
+cluster_change_modal <- bsModal("cluster_change_modal",
+                                title = "Changing Clusters",
+                                trigger = NULL,
+                                size = "small",
+                                tags$head(tags$style("#cluster_change_modal .modal-title {color:#3380A9; font-weight:bold;}"),
+                                          tags$style("#cluster_change_modal .modal-footer {display:none;}")),
+                                p("Changing clusters will clear all existing charts and analysis results..."),
+                                br(),
+                                tags$div(actionButton("cluster_cancel", "Cancel"),
+                                         actionButton("cluster_proceed", "Proceed", style = "float:right")),
+                                br())
 
 body1 <- box(id       = "bodyElement1",
              title    = textOutput("summaryTitle"),
@@ -86,23 +72,32 @@ body1 <- box(id       = "bodyElement1",
              uiOutput("datasetSummary")
             )
 
+
+build_gene_select <- function(id, label) {
+    selectizeInput(id,
+                   label    = ui_tooltip(glue("{id}_Tooltip"), label,
+                                         'Choose from genes expressed in the dataset. <i>Unexpressed genes are not available to be chosen.</i>'),
+                   choices  = NULL,
+                   multiple = FALSE,
+                   options  = list(placeholder = "Type/Click then Select",
+                                   searchField = "value",
+                                   plugins     = list('remove_button')))
+}
+
+gene1_select <- build_gene_select("gene1Sel", "Gene 1")
+gene2_select <- build_gene_select("gene2Sel", "Gene 2")
+
 body2 <- box(id          = "bodyElement2",
              title       = "Gene Expression Plots",
              width       = 12,
              collapsible = FALSE,
-             tags$head(tags$script(HTML(application_js))),
-             tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
+             tags$head(tags$script(HTML(radiobuttons_js))),
+             useShinyFeedback(),
              tabBox(id     = "tabBodyElement2",
                     width  = 12,
                     selected = "Overview",
                     tabPanel("Overview",
-                             canvasXpressOutput("cxOverviewPlot", width = "100%", height = "600px"),
-                             tags$br(),
-                             tags$h4(align = "center", tags$strong('Top 10 Differentially Expressed Genes By Cluster')),
-                             downloadFileButton("top30DE", c("csv", "tsv"), "Download top 30"),
-                             downloadableTableUI("top10DE", list("csv", "tsv"),
-                                                 "Download top 10",
-                                                 contentHeight = "200px")),
+                             canvasXpressOutput("cxOverviewPlot", width = "100%", height = "800px"),),
                     tabPanel("Scatterplot",
                              fluidRow(
                                  column(width = 3, selectizeInput("scatterClusterSel",
@@ -114,7 +109,7 @@ body2 <- box(id          = "bodyElement2",
                                                     create_bs_button(id    = "scatterPlotBtn",
                                                                      label = " Plot/Refresh"))),
                              tags$hr(),
-                             canvasXpressOutput("cxScatterPlot", width = "100%", height = "600px")),
+                             canvasXpressOutput("cxScatterPlot", width = "100%", height = "800px")),
                     tabPanel("Violin",
                              fluidRow(
                                  column(width = 3, textInput("violinPanelPlotColumns", "Panel Plot Columns", "auto")),
@@ -122,33 +117,41 @@ body2 <- box(id          = "bodyElement2",
                                         create_bs_button(id    = "violinPlotBtn",
                                                          label = " Plot/Refresh"))),
                              tags$hr(),
-                             canvasXpressOutput("cxViolinPlot", width = "100%", height = "600px")),
-                    tabPanel("DotPlot",
-                             fluidRow(
-                                 column(width = 6, radioButtons("addDotGenes",
-                                                                label    = "Add the top differentially expressed genes:",
-                                                                choices  = g_add_top_genes_options,
-                                                                selected = "off",
-                                                                inline   = TRUE)),
-                                 column(width = 3,
-                                        create_bs_button(id    = "dotPlotBtn",
-                                                         label = " Plot/Refresh"))),
-                             tags$hr(),
-                             uiOutput("cxDotPlot")),
+                             canvasXpressOutput("cxViolinPlot", width = "100%", height = "800px")),
                     tabPanel("Heatmap",
                              fluidRow(
-                                 column(width = 6, radioButtons("addHeatmapGenes",
-                                                                label    = "Add the top differentially expressed genes:",
-                                                                choices  = g_add_top_genes_options,
-                                                                selected = "off",
-                                                                inline   = TRUE)),
                                  column(width = 3, create_bs_button(id    = "heatmapPlotBtn",
                                                                     label = " Plot/Refresh"))),
                              tags$hr(),
                              uiOutput("cxHeatmapPlot")),
+                    tabPanel("Co-Expression Analysis",
+                             fluidRow(
+                                 column(width = 3, selectizeInput("coExpClusterSel",
+                                                                  label    = "Cluster Plotted",
+                                                                  choices  = NULL,
+                                                                  multiple = FALSE)),
+                                 column(width = 3, gene1_select),
+                                 column(width = 3, gene2_select),
+                                 column(width = 3, tags$label(HTML("&zwnj;")), tags$br(),
+                                        create_bs_button(id    = "coExpPlotBtn",
+                                                         label = " Plot/Refresh"))),
+                             tags$hr(),
+                             fluidRow(column(width = 1),
+                                      column(width = 8,
+                                             tags$div(align = "right",
+                                                      style = "padding-right:5%",
+                                                canvasXpressOutput("cxCoExpPlot", width = "100%", height = "600px"))),
+                                      column(width = 2,
+                                             uiOutput("cxNoiseControls")),
+                                      column(width = 1)),
+                             tags$hr(),
+                             tags$h4(align = "center",
+                                     uiOutput("coExpTableTitle")),
+                             tags$div(style = "padding-left:15%; padding-right:15%;",
+                                      downloadableTableUI("coExpTable", list("csv", "tsv"),
+                                                          "Download population combinations data"))),
                     tabPanel("Differential Analysis",
-                             uiOutput("differentialsText"),
-                             tags$p(),
+                             dac_modal,
                              fluidRow(
                                  column(width = 3, selectizeInput("differentialsCluster1Sel",
                                                                   label    = "Cluster 1",
@@ -169,17 +172,17 @@ body2 <- box(id          = "bodyElement2",
                                  column(width = 6, div(canvasXpressOutput("cxDifferentialsScatterPlot1", width = "100%", height = "400px"),
                                                        style = "padding-left:5%;padding-right:2.5%;")),
                                  column(width = 6, div(canvasXpressOutput("cxDifferentialsScatterPlot2", width = "100%", height = "400px"),
-                                                       style = "padding-left:2.5%;padding-right:5%;")))
-                             ,
+                                                       style = "padding-left:2.5%;padding-right:5%;"))),
                              tags$hr(),
                              tags$h4(align = "center", uiOutput("differentialsTableTitle")),
                              uiOutput("differentialsTableAlternativeText"),
-                             div(heatmap_downloadableTableUI("differentialsTable", list("csv", "tsv"),
-                                                             "Download table data",
-                                                             contentHeight = "200px"),
+                             div(downloadableTableUI(id            = "differentialsTable",
+                                                     downloadtypes = list("csv", "tsv"),
+                                                     hovertext     = "Download table data",
+                                                     contentHeight = "200px"),
                                  style = "padding-left:10%;padding-right:10%;"))
                 )
              )
 
 # -- Register Elements in the ORDER SHOWN in the UI
-add_ui_body(list(loading_modal, file_error_modal, body1, body2))
+add_ui_body(list(loading_modal, cluster_change_modal, body1, body2))

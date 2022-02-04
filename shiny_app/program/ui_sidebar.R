@@ -24,57 +24,48 @@ suppressPackageStartupMessages(library(shinyjs))
 
 # -- Create Basic Elements
 
-sidebar_header <- tags$div(useShinyjs())
+sidebar_header <- tags$div(align = "center",
+                           tags$h3('Chart Options'), br(),
+                           useShinyjs())
 
-file_input <- tags$div(
-    style = "margin-top:20px;margin-bottom:25px;",
-    align = "center",
-    fileInput(inputId = "fileInputDialog",
-              label   = NULL,
-              buttonLabel = "Load New Data Object",
-              width   = "80%"))
+clusters_select <- selectizeInput("clustersSel",
+                               label    = ui_tooltip("clustersTooltip", "Cluster",
+                                                     "Choose from clusters available in the dataset."),
+                               choices  = NULL,
+                               multiple = FALSE,
+                               options  = list(placeholder = "Type/Click then Select",
+                                               searchField = "value",
+                                               plugins     = list('remove_button')))
 
-genes_select <- tags$div(
-    h4("Chart Options"),
-    selectizeInput("genesSel",
+genes_select <- selectizeInput("genesSel",
                    label    = ui_tooltip('genesTooltip', "Genes",
                                          'Choose from genes expressed in the dataset. <i>Unexpressed genes are not available to be chosen.</i>'),
                    choices  = NULL,
                    multiple = TRUE,
                    options  = list(placeholder = "Type/Click then Select",
                                    searchField = "value",
-                                   plugins     = list('remove_button'))))
+                                   plugins     = list('remove_button')))
 
-help_text <- tags$div(
-    tags$br(),
-    tags$h4(tags$a(href = 'canvasxpress.org', "CanvasXpress"), "Tips"),
-    tags$p(style = "margin:10px;",
-           tags$strong('Toolbar'), "- the main toolbar is available if you hover over the top title of the chart. Additional functionality can also be accessed by right-clicking anywhere on the chart",
-           tags$br(), tags$br(),
-           tags$strong('Zoom'), "- select an area or use the mouse to zoom by scrolling.  Reset the canvas by hitting Esc",
-           tags$br(), tags$br(),
-           tags$strong('Focus'), "- select a legend item to toggle a fade on that item",
-           tags$br(), tags$br(),
-           tags$strong('Select'), "- select points on a plot using shift-drag to select an area.  Deselect by clicking a blank area or hitting Esc",
-           tags$br(), tags$br(),
-           tags$strong('Download'), "- hover over the main title and select the camera icon from the toolbar"))
+gene_signatures_select <- selectizeInput("geneSignaturesSel",
+                                         label    = ui_tooltip('geneSignaturesTooltip', "Gene Signatures",
+                                                               'Choose from custom gene signatures. <i>Only genes expressed in the dataset will be available for plotting and analysis.</i>'),
+                                         choices  = NULL,
+                                         multiple = TRUE,
+                                         options  = list(placeholder = "Type/Click then Select",
+                                                         searchField = "value",
+                                                         plugins     = list('remove_button')))
 
-about_text <- tags$div(
-                tags$br(),
-                tags$h4(style = "margin:-10px;",
-                        actionLink("about_link", "About This App")))
+selected_gene_signatures_text <- uiOutput("selected_gene_signatures_text")
 
 
+# -- Register Basic Elements in the ORDER SHOWN in the UI
 add_ui_sidebar_basic(list(sidebar_header,
-                          file_input,
+                          clusters_select,
                           genes_select,
-                          help_text,
-                          about_text),
-                     tabname = "Application")
+                          gene_signatures_select,
+                          selected_gene_signatures_text))
 
 # -- Create Advanced Elements
 
-add_ui_sidebar_advanced(list(uiOutput("filterOptions"),
-                             hr()),
-                        tabname = "Filtering")
+# add_ui_sidebar_advanced(list())
 

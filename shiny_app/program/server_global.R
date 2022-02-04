@@ -23,17 +23,24 @@
 # ----------------------------------------
 
 # -- IMPORTS --
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(tibble))
-suppressPackageStartupMessages(library(tidyr))
-suppressPackageStartupMessages(library(RColorBrewer))
-suppressPackageStartupMessages(library(Seurat))
+suppressPackageStartupMessages({
+    library(dplyr)
+    library(tibble)
+    library(tidyr)
+    library(RColorBrewer)
+    library(shinyjs)
+    library(stats)
+    library(shinyFeedback)
+    library(shiny)
+})
 
-if (packageVersion("Seurat") < "3.0.0") { stop("Need to upgrade Seurat to >= version 3.0.0") }
+suppressMessages({
+    import::from(dplyr, left_join, select, arrange, dplyr_filter = filter, summarise, rename)
+})
+
+if (g_debug) message('----- DEBUG MODE ON -----')
 
 # -- VARIABLES --
 
 
 # -- FUNCTIONS --
-
-
